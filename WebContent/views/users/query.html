@@ -1,0 +1,120 @@
+<div class="layui-fluid">
+	<div class="layui-row">
+		<div class="layui-col-xs12">
+			<div class="layui-card">
+				<div class="layui-card-header">注册用户信息列表</div>
+				<div class="layui-card-body usersList">
+					<table class="layui-table">
+						<thead>
+							<tr>
+								<th>ID</th>
+								<th>用户名</th>
+								<th>密码</th>
+								<th>操作</th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr v-for="item in dataSource">
+								<td>{{item.id}}</td>
+								<td>{{item.name}}</td>
+								<td>{{item.password}}</td>
+								<td>
+									<button v-on:click="removeData" data-id="{{item.id}}" class="layui-btn layui-btn-danger">移除</button>
+								</td>
+							</tr>
+						</tbody>		
+					</table>
+					<div id="laypageDemo"></div>
+				</div>
+			</div>
+		</div>
+		
+	</div>
+	
+
+</div>
+<script>
+var $ = layui.jquery;//获取layui里面的jquery模块
+var vm = new Vue({
+	el: '.usersList',		//生效范围
+	data:{  //双向绑定
+		dataSource: []
+	},
+	methods: {
+		//查询所有用户
+		loadData: function(page,rows){
+			page = page?page:1;
+			rows = rows?rows:5;
+			this.$http({    //后台查询list
+				url: 'users/list.do',
+				data:{   //查询条件
+					page:page,
+					rows:rows
+				}
+			}).then(function(res){  //查询后返回值
+				var data = res.data;
+				vm.dataSource = data.rows;   //UsersController返回的数
+				layui.use('laypage',function(){   //翻页功能使用layui的laypage插件
+					var laypage = layui.laypage;
+					laypage.render({           //渲染，就是如何显示的部分
+						elem: 'laypageDemo',  // 存放分页控件的容器
+						count: data.total,     //数据总数。一般通过服务端得到，这里从UsersController中得到
+						limit: rows,          //每页显示的条数。
+						curr: page,  			//起始页。
+						jump: function(obj,first){ //渲染时要执行的，jump 方法中obj参数可以取到上面的属性和方法
+							//首次不执行
+							if(!first){     
+								vm.loadData(obj.curr,obj.limit);
+							}
+						}
+					})
+				});
+			});
+		},
+		
+		//删除一个用户
+		removeData: function(e){
+			if(!confirm('您确定要删除该用户吗？')){
+				return;
+			}
+			this.$http({
+				url: 'users/delete.do?id='+e.target.dataset.id,
+						data:{}
+			}).then(function(res){
+				var data = res.data;
+				if(data.code!=0){
+					alert(data.errMsg);
+					return;
+				}
+				alert("删除成功!");
+				location.reload(); //删除后刷新页面
+			});
+		}
+	}
+});
+vm.loadData();  //直接执行
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
